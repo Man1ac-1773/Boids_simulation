@@ -1,6 +1,7 @@
 #include <math.h>
 #include <raylib.h>
 #include <raymath.h>
+#include <stdio.h>
 #include <stdlib.h>
 #define WIDTH 1000
 #define HEIGHT 700
@@ -9,17 +10,30 @@
 #define PERCEPTION_RADIUS 50
 #define MAX_SPEED 2.5f
 
-#define SEP_W 1.6f // seperation weight
-#define ALI_W 1.0f // alignment weight
-#define COH_W 0.8f // cohesion weight
+#define SEP_W 100.0f // seperation weight
+#define ALI_W 50.0f  // alignment weight
+#define COH_W 40.0f  // cohesion weight
 
+#define TRI_DIM 5.0f // length from center to vertice
+
+typedef Vector2 Vec2;
 typedef struct
 {
-    Vector2 pos;
-    Vector2 vel;
+    Vec2 pos;
+    Vec2 vel;
 } Boid;
 
-Vector2 limit(Vector2 v, float max)
+typedef struct triangle_vectors
+{
+    Vec2 v1;
+    Vec2 v2;
+    Vec2 v3; // anti-clockwise order
+} Triangle;
+// let dimension s = 2.0f;
+// we go 2.0f from pos in the direction of vel
+// then we rotate that by 120, then 120 again and go 2.0f in that side
+// use these three points to make triangle
+Vec2 limit(Vec2 v, float max)
 {
     float m = Vector2Length(v);
     if (m > max)
@@ -30,9 +44,21 @@ Vector2 limit(Vector2 v, float max)
     return v;
 }
 
+Triangle UpdateTriangleBoid(Boid boid)
+{
+    Vec2 dir = Vector2Scale(Vector2Normalize(boid.vel), TRI_DIM);
+    Triangle t;
+    t.v1 = Vector2Add(boid.pos, dir);
+    dir = Vector2Rotate(dir, 120 * DEG2RAD);
+    t.v2 = Vector2Add(boid.pos, dir);
+    dir = Vector2Rotate(dir, 120 * DEG2RAD);
+    t.v3 = Vector2Add(boid.pos, dir);
+    return t;
+}
+
 int main(void)
 {
-    InitWindow(WIDTH, HEIGHT, "Boids (raylib)");
+    InitWindow(WIDTH, HEIGHT, "Boids");
     SetTargetFPS(60);
 
     Boid boids[BOID_COUNT];
@@ -73,15 +99,14 @@ int main(void)
                 ali = Vector2Scale(ali, 1.0f / count);
                 coh = Vector2Subtract(Vector2Scale(coh, 1.0f / count), boids[i].pos);
             }
-
-            boids[i].vel =
-                Vector2Add(boids[i].vel, Vector2Add(Vector2Add(Vector2Scale(sep, SEP_W), Vector2Scale(ali, ALI_W)),
-                                                    Vector2Scale(coh, COH_W)));
+            float deltaTime = GetFrameTime();
+            boids[i].vel = Vector2Add(boids[i].vel, Vector2Add(Vector2Add(Vector2Scale(sep, deltaTime * SEP_W),
+                                                                          Vector2Scale(ali, deltaTime * ALI_W)),
+                                                               Vector2Scale(coh, deltaTime * COH_W)));
 
             boids[i].vel = limit(boids[i].vel, MAX_SPEED);
             boids[i].pos = Vector2Add(boids[i].pos, boids[i].vel);
 
-            // wrap around
             if (boids[i].pos.x < 0)
                 boids[i].pos.x += WIDTH;
             if (boids[i].pos.y < 0)
@@ -91,7 +116,8 @@ int main(void)
             if (boids[i].pos.y > HEIGHT)
                 boids[i].pos.y -= HEIGHT;
 
-            DrawCircleV(boids[i].pos, 2, RAYWHITE);
+            Triangle boid_triangle = UpdateTriangleBoid(boids[i]);
+            DrawTriangle(boid_triangle.v1, boid_triangle.v3, boid_triangle.v2, RAYWHITE);
         }
 
         DrawFPS(WIDTH - 80, 0);
