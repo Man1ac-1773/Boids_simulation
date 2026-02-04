@@ -138,7 +138,7 @@ int main(void)
             Triangle boid_triangle = UpdateTriangleBoid(boids[i]);
             DrawTriangle(boid_triangle.v1, boid_triangle.v3, boid_triangle.v2, RAYWHITE);
         }
-
+        DrawRectangleLines(0, 0, WORLD_HEIGHT, WORLD_WIDTH, RED);
         EndMode2D();
         DrawFPS(WIDTH - 80, 0);
         EndDrawing();
