@@ -1,10 +1,11 @@
 #include <math.h>
 #include <raylib.h>
 #include <raymath.h>
-#include <stdio.h>
 #include <stdlib.h>
 #define WIDTH 1000
 #define HEIGHT 700
+#define WORLD_WIDTH 2000
+#define WORLD_HEIGHT 2000
 #define BOID_COUNT 200
 
 #define PERCEPTION_RADIUS 50
@@ -16,6 +17,7 @@
 
 #define TRI_DIM 5.0f // length from center to vertice
 
+#define CAMERA_SPEED 1000.0f;
 typedef Vector2 Vec2;
 typedef struct
 {
@@ -68,11 +70,28 @@ int main(void)
         boids[i].pos = (Vector2) {rand() % WIDTH, rand() % HEIGHT};
         boids[i].vel = (Vector2) {((rand() % 100) / 50.0f - 1), ((rand() % 100) / 50.0f - 1)};
     }
-
+    Camera2D camera = {0};
+    camera.target = (Vec2) {(float) WIDTH / 2, (float) HEIGHT / 2};
+    camera.offset = (Vec2) {(float) WIDTH / 2, (float) HEIGHT / 2};
+    camera.zoom = 1.0f;
+    camera.rotation = 0.0f;
     while (!WindowShouldClose())
     {
         BeginDrawing();
         ClearBackground(BLACK);
+        BeginMode2D(camera);
+        camera.zoom += GetMouseWheelMove() * 0.1f;
+        if (camera.zoom < 0.1f)
+            camera.zoom = 0.1f;
+        if (IsKeyDown(KEY_RIGHT))
+            camera.target.x += GetFrameTime() * CAMERA_SPEED;
+        if (IsKeyDown(KEY_LEFT))
+            camera.target.x -= GetFrameTime() * CAMERA_SPEED;
+        if (IsKeyDown(KEY_UP))
+            camera.target.y -= GetFrameTime() * CAMERA_SPEED;
+        if (IsKeyDown(KEY_DOWN))
+            camera.target.y += GetFrameTime() * CAMERA_SPEED;
+
         for (int i = 0; i < BOID_COUNT; i++)
         {
             Vector2 sep = {0, 0}, ali = {0, 0}, coh = {0, 0};
@@ -120,6 +139,7 @@ int main(void)
             DrawTriangle(boid_triangle.v1, boid_triangle.v3, boid_triangle.v2, RAYWHITE);
         }
 
+        EndMode2D();
         DrawFPS(WIDTH - 80, 0);
         DrawText("Boids", 10, 10, 20, GRAY);
         EndDrawing();
