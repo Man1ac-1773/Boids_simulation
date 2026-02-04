@@ -127,13 +127,13 @@ int main(void)
             boids[i].pos = Vector2Add(boids[i].pos, boids[i].vel);
 
             if (boids[i].pos.x < 0)
-                boids[i].pos.x += WIDTH;
+                boids[i].pos.x += WORLD_WIDTH;
             if (boids[i].pos.y < 0)
-                boids[i].pos.y += HEIGHT;
-            if (boids[i].pos.x > WIDTH)
-                boids[i].pos.x -= WIDTH;
-            if (boids[i].pos.y > HEIGHT)
-                boids[i].pos.y -= HEIGHT;
+                boids[i].pos.y += WORLD_HEIGHT;
+            if (boids[i].pos.x > WORLD_WIDTH)
+                boids[i].pos.x -= WORLD_WIDTH;
+            if (boids[i].pos.y > WORLD_HEIGHT)
+                boids[i].pos.y -= WORLD_HEIGHT;
 
             Triangle boid_triangle = UpdateTriangleBoid(boids[i]);
             DrawTriangle(boid_triangle.v1, boid_triangle.v3, boid_triangle.v2, RAYWHITE);
@@ -141,7 +141,6 @@ int main(void)
 
         EndMode2D();
         DrawFPS(WIDTH - 80, 0);
-        DrawText("Boids", 10, 10, 20, GRAY);
         EndDrawing();
     }
 
