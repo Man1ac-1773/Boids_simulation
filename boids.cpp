@@ -56,6 +56,7 @@ Vector2 limit(Vector2 v)
     return v;
 }
 
+// force a boid to be within world border
 void ClampToWorld(Boid* boid)
 {
     if (boid->pos.x > WORLD_WIDTH)
@@ -82,7 +83,7 @@ int main(void)
     Camera2D camera = {0};
     camera.target = (Vector2) {(float) WIDTH / 2, (float) HEIGHT / 2};
     camera.offset = (Vector2) {(float) WIDTH / 2, (float) HEIGHT / 2};
-    camera.zoom = 1.0f;
+    camera.zoom = 0.5f;
     camera.rotation = 0.0f;
     while (!WindowShouldClose())
     {
@@ -115,7 +116,7 @@ int main(void)
                 if (d < PERCEPTION_RADIUS && d > 0)
                 {
                     Vector2 diff = boids[i].pos - boids[j].pos;
-                    sep += (diff * (1.0f) / (d + 0.01f));
+                    sep += (diff * (1.0f) / (d + 0.0001f));
                     ali += boids[j].vel;
                     coh += boids[j].pos;
                     count++;
