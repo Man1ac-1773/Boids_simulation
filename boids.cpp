@@ -12,15 +12,16 @@ using namespace std;
 #define PERCEPTION_RADIUS 50
 #define MAX_SPEED 2.5f
 
-#define SEP_W 100.0f // seperation weight
-#define ALI_W 50.0f  // alignment weight
-#define COH_W 40.0f  // cohesion weight
+#define SEP_W 100.0f    // seperation weight
+#define ALI_W 50.0f     // alignment weight
+#define COH_W 40.0f     // cohesion weight
+#define MOUSE_W 5000.0f // mouse weight
 
 #define TRI_DIM 5.0f // length from center to vertice
 
 #define CAMERA_SPEED 1000.0f;
 
-typedef struct triangle_vectors
+typedef struct triangle_vertices
 {
     Vector2 v1;
     Vector2 v2;
@@ -128,8 +129,12 @@ int main(void)
                 ali = (ali * 1.0f / count);
                 coh = (coh * 1.0f / count) - boids[i].pos;
             }
+            Vector2 mouse_sep = boids[i].pos - GetScreenToWorld2D(GetMousePosition(), camera);
+            float mouse_dis = Vector2Length(mouse_sep);
+            mouse_sep = Vector2Normalize(mouse_sep) * (1.0f / (mouse_dis + 0.001f));
             float deltaTime = GetFrameTime();
-            boids[i].vel += ali * ALI_W * deltaTime + coh * COH_W * deltaTime + sep * SEP_W * deltaTime;
+            boids[i].vel += ali * ALI_W * deltaTime + coh * COH_W * deltaTime + sep * SEP_W * deltaTime +
+                            mouse_sep * deltaTime * MOUSE_W;
 
             boids[i].vel = limit(boids[i].vel);
             boids[i].pos = boids[i].pos + boids[i].vel;
