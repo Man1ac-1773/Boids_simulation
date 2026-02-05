@@ -1,7 +1,8 @@
 #include <math.h>
 #include <raylib.h>
 #include <raymath.h>
-#include <stdlib.h>
+#include <vector>
+using namespace std;
 #define WIDTH 1000
 #define HEIGHT 700
 #define WORLD_WIDTH 2000
@@ -18,23 +19,32 @@
 #define TRI_DIM 5.0f // length from center to vertice
 
 #define CAMERA_SPEED 1000.0f;
-typedef Vector2 Vector2;
-typedef struct
-{
-    Vector2 pos;
-    Vector2 vel;
-} Boid;
 
 typedef struct triangle_vectors
 {
     Vector2 v1;
     Vector2 v2;
-    Vector2 v3; // anti-clockwise order
+    Vector2 v3; // clockwise order
 } Triangle;
-// let dimension s = 2.0f;
-// we go 2.0f from pos in the direction of vel
-// then we rotate that by 120, then 120 again and go 2.0f in that side
-// use these three points to make triangle
+
+class Boid
+{
+  public:
+    Vector2 pos;
+    Vector2 vel;
+    Triangle vertices;
+    Boid() {};
+    void UpdateTriangle()
+    {
+        Vector2 dir = Vector2Scale(Vector2Normalize(vel), TRI_DIM);
+        vertices.v1 = pos + dir;
+        dir = Vector2Rotate(dir, 120 * DEG2RAD);
+        vertices.v2 = pos + dir;
+        dir = Vector2Rotate(dir, 120 * DEG2RAD);
+        vertices.v3 = pos + dir;
+    }
+};
+
 Vector2 limit(Vector2 v)
 {
     float m = Vector2Length(v);
@@ -44,18 +54,6 @@ Vector2 limit(Vector2 v)
         v.y = (v.y / m) * MAX_SPEED;
     }
     return v;
-}
-
-Triangle UpdateTriangleBoid(Boid boid)
-{
-    Vector2 dir = Vector2Scale(Vector2Normalize(boid.vel), TRI_DIM);
-    Triangle t;
-    t.v1 = boid.pos + dir;
-    dir = Vector2Rotate(dir, 120 * DEG2RAD);
-    t.v2 = boid.pos + dir;
-    dir = Vector2Rotate(dir, 120 * DEG2RAD);
-    t.v3 = boid.pos + dir;
-    return t;
 }
 
 void ClampToWorld(Boid* boid)
@@ -74,7 +72,7 @@ int main(void)
     InitWindow(WIDTH, HEIGHT, "Boids");
     SetTargetFPS(60);
 
-    Boid boids[BOID_COUNT];
+    vector<Boid> boids(BOID_COUNT);
 
     for (int i = 0; i < BOID_COUNT; i++)
     {
@@ -137,8 +135,8 @@ int main(void)
 
             ClampToWorld(&boids[i]);
 
-            Triangle boid_triangle = UpdateTriangleBoid(boids[i]);
-            DrawTriangle(boid_triangle.v1, boid_triangle.v3, boid_triangle.v2, RAYWHITE);
+            boids[i].UpdateTriangle();
+            DrawTriangle(boids[i].vertices.v1, boids[i].vertices.v3, boids[i].vertices.v2, RAYWHITE);
         }
         DrawRectangleLines(0, 0, WORLD_HEIGHT, WORLD_WIDTH, GREEN);
         EndMode2D();
