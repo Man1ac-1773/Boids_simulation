@@ -62,18 +62,16 @@ class Boid
         if (pos.y < 0)
             pos.y = 0;
     }
-};
-
-Vector2 limit(Vector2 v)
-{
-    float m = Vector2Length(v);
-    if (m > MAX_SPEED)
+    void VelocityLimit()
     {
-        v.x = (v.x / m) * MAX_SPEED;
-        v.y = (v.y / m) * MAX_SPEED;
+        float m = Vector2Length(vel);
+        if (m > MAX_SPEED)
+        {
+            vel.x = (vel.x / m) * MAX_SPEED;
+            vel.y = (vel.y / m) * MAX_SPEED;
+        }
     }
-    return v;
-}
+};
 
 int main(void)
 {
@@ -164,7 +162,7 @@ int main(void)
             boids[i].vel += ali * ALI_W * deltaTime + coh * COH_W * deltaTime + sep * SEP_W * deltaTime +
                             mouse_sep * deltaTime * MOUSE_W + wall_sep * deltaTime * WALL_W;
 
-            boids[i].vel = limit(boids[i].vel);
+            boids[i].VelocityLimit();
             boids[i].pos = boids[i].pos + boids[i].vel;
             boids[i].ClampToWorld();
             boids[i].UpdateTriangle();

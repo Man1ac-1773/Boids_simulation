@@ -1,11 +1,3 @@
-/* This is the simplified version of Boid simulation
- * Boids follow flocking behaviour, with little to no complexity
- * Average velocity, stay near COM, and run from mouse (preliminary predator)
- * They wrap around the world borders, parameters of which are defined
- * with #define directives in the start.
- * I am letting this stay here, in interest of it being a very simple skeleton of a boids simulation.
- * Further complex work is added in different files
- */
 
 #include <math.h>
 #include <raylib.h>
@@ -53,31 +45,28 @@ class Boid
         dir = Vector2Rotate(dir, 120 * DEG2RAD);
         vertices.v3 = pos + dir;
     }
+    void WrapAroundWorld()
+    {
+        if (pos.x > WORLD_WIDTH)
+            pos.x -= WORLD_WIDTH;
+        if (pos.y > WORLD_HEIGHT)
+            pos.y -= WORLD_HEIGHT;
+        if (pos.x < 0)
+            pos.x += WORLD_WIDTH;
+        if (pos.y < 0)
+            pos.y += WORLD_HEIGHT;
+    }
+    void VelocityLimit()
+    {
+        float m = Vector2Length(vel);
+        if (m > MAX_SPEED)
+        {
+            vel.x = (vel.x / m) * MAX_SPEED;
+            vel.y = (vel.y / m) * MAX_SPEED;
+        }
+    }
 };
 
-Vector2 limit(Vector2 v)
-{
-    float m = Vector2Length(v);
-    if (m > MAX_SPEED)
-    {
-        v.x = (v.x / m) * MAX_SPEED;
-        v.y = (v.y / m) * MAX_SPEED;
-    }
-    return v;
-}
-
-// force a boid to be within world border
-void ClampToWorld(Boid* boid)
-{
-    if (boid->pos.x > WORLD_WIDTH)
-        boid->pos.x -= WORLD_WIDTH;
-    if (boid->pos.y > WORLD_HEIGHT)
-        boid->pos.y -= WORLD_HEIGHT;
-    if (boid->pos.x < 0)
-        boid->pos.x += WORLD_WIDTH;
-    if (boid->pos.y < 0)
-        boid->pos.y += WORLD_HEIGHT;
-}
 int main(void)
 {
     InitWindow(WIDTH, HEIGHT, "Boids");
@@ -145,11 +134,9 @@ int main(void)
             boids[i].vel += ali * ALI_W * deltaTime + coh * COH_W * deltaTime + sep * SEP_W * deltaTime +
                             mouse_sep * deltaTime * MOUSE_W;
 
-            boids[i].vel = limit(boids[i].vel);
+            boids[i].VelocityLimit();
             boids[i].pos = boids[i].pos + boids[i].vel;
-
-            ClampToWorld(&boids[i]);
-
+            boids[i].WrapAroundWorld();
             boids[i].UpdateTriangle();
             DrawTriangle(boids[i].vertices.v1, boids[i].vertices.v3, boids[i].vertices.v2, RAYWHITE);
         }
