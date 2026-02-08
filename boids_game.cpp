@@ -1,3 +1,12 @@
+/* This is the simplified version of Boid simulation
+ * Boids follow flocking behaviour, with little to no complexity
+ * Average velocity, stay near COM, and run from mouse (preliminary predator)
+ * They wrap around the world borders, parameters of which are defined
+ * with #define directives in the start.
+ * I am letting this stay here, in interest of it being a very simple skeleton of a boids simulation.
+ * Further complex work is added in different files
+ */
+
 #include <math.h>
 #include <raylib.h>
 #include <raymath.h>
