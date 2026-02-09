@@ -4,7 +4,6 @@
  * And can understand the true beauty of flocking simulation
  */
 
-#include <iostream>
 #include <math.h>
 #include <raylib.h>
 #include <raymath.h>
