@@ -147,7 +147,7 @@ int main(void)
             boids[i].vel += ali * Settings::ali_weight * deltaTime + coh * Settings::coh_weight * deltaTime +
                             sep * Settings::sep_weight * deltaTime + mouse_sep * deltaTime * Settings::mouse_weight;
 
-            Vector2ClampValue(boids[i].vel, 0, Settings::max_speed);
+            boids[i].vel = Vector2ClampValue(boids[i].vel, 0, Settings::max_speed);
             boids[i].pos = boids[i].pos + boids[i].vel;
             boids[i].WrapAroundWorld();
             boids[i].UpdateTriangle();
@@ -156,7 +156,7 @@ int main(void)
         DrawRectangleLines(0, 0, Settings::WORLD_HEIGHT, Settings::WORLD_WIDTH, GREEN);
         EndMode2D();
         DrawConfig();
-        DrawFPS(WIDTH - 80, 0);
+        DrawFPS(0, 0);
         EndDrawing();
     }
 
@@ -173,20 +173,20 @@ void DrawConfig()
 
     if (currentOffset > 1.0f)
     {
-        Rectangle panelArea = {(float) GetScreenWidth() - currentOffset, 0, menuWidth, (float) GetScreenHeight()};
+        Rectangle panel = {(float) WIDTH - menuWidth, 0, menuWidth, (float) HEIGHT};
 
-        GuiPanel(panelArea, "BOID CONFIGURATOR");
-        float startX = panelArea.x + 60;
+        GuiPanel(panel, "BOID CONFIGURATOR");
+        float startX = panel.x + 60;
         float startY = 50;
         GuiLabel({startX, startY, 120, 20}, "Seperation");
-        sep_weight = GuiSliderBar({startX, startY + 20, 120, 20}, "0", "1000", &sep_weight, 0, 1000);
+        GuiSliderBar({startX, startY + 20, 120, 20}, "0", "1000", &sep_weight, 0, 1000);
         GuiLabel({startX, startY + 60, 120, 20}, "Alignment");
-        ali_weight = GuiSliderBar({startX, startY + 80, 120, 20}, "0", "500", &ali_weight, 0, 500);
+        GuiSliderBar({startX, startY + 80, 120, 20}, "0", "500", &ali_weight, 0, 500);
         GuiLabel({startX, startY + 120, 120, 20}, "Cohesion");
-        coh_weight = GuiSliderBar({startX, startY + 140, 120, 20}, "0", "500", &coh_weight, 0, 500);
+        GuiSliderBar({startX, startY + 140, 120, 20}, "0", "500", &coh_weight, 0, 500);
 
-        GuiLabel({startX, startY + 180, 120, 20}, "Physics Settings");
-        max_speed = GuiSliderBar({startX, startY + 200, 120, 20}, "Max Speed", nullptr, &max_speed, 0.5, 10);
+        GuiLabel({startX, startY + 180, 120, 10}, "Physics Settings");
+        GuiSliderBar({startX, startY + 200, 120, 20}, "Max Speed", nullptr, &max_speed, 0.5, 10);
 
         // showDebug = GuiCheckBox({startX, startY + 180, 20, 20}, "Debug Mode", showDebug);
     }
