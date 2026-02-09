@@ -14,7 +14,10 @@
 
 #define WIDTH 1000
 #define HEIGHT 700
+#define WORLD_WIDTH 2000
+#define WORLD_HEIGHT 2000
 #define BOID_COUNT 600
+#define MOUSE_CONST 100
 
 #define TRI_DIM 5.0f // length from center to vertice
 
@@ -29,9 +32,8 @@ float max_speed = 2.5f;
 float sep_weight = 100.0f;
 float ali_weight = 50.0f;
 float coh_weight = 40.0f;
-float mouse_weight = 5000.0f;
-uint WORLD_HEIGHT = 2000;
-uint WORLD_WIDTH = 2000;
+float mouse_weight = 50.0f;
+bool WrapAroundWorld = false;
 // --- ---
 // --- Settings window params ---
 bool menuActive = false;
@@ -66,14 +68,14 @@ class Boid
     }
     void WrapAroundWorld()
     {
-        if (pos.x > Settings::WORLD_WIDTH)
-            pos.x -= Settings::WORLD_WIDTH;
-        if (pos.y > Settings::WORLD_HEIGHT)
-            pos.y -= Settings::WORLD_HEIGHT;
+        if (pos.x > WORLD_WIDTH)
+            pos.x -= WORLD_WIDTH;
+        if (pos.y > WORLD_HEIGHT)
+            pos.y -= WORLD_HEIGHT;
         if (pos.x < 0)
-            pos.x += Settings::WORLD_WIDTH;
+            pos.x += WORLD_WIDTH;
         if (pos.y < 0)
-            pos.y += Settings::WORLD_HEIGHT;
+            pos.y += WORLD_HEIGHT;
     }
 };
 
@@ -140,12 +142,25 @@ int main(void)
                 ali = (ali * 1.0f / count);
                 coh = (coh * 1.0f / count) - boids[i].pos;
             }
-            Vector2 mouse_sep = boids[i].pos - GetScreenToWorld2D(GetMousePosition(), camera);
+
+            // --- mouse seperation handling ---
+            Vector2 mouse_pos = GetScreenToWorld2D(GetMousePosition(), camera);
+            Vector2 mouse_sep;
+            if (mouse_pos.x > WORLD_WIDTH || mouse_pos.y > WORLD_HEIGHT)
+                mouse_sep = {0, 0};
+            else
+                mouse_sep = boids[i].pos - mouse_pos;
             float mouse_dis = Vector2Length(mouse_sep);
-            mouse_sep = Vector2Normalize(mouse_sep) * (1.0f / (mouse_dis + 0.001f));
+            // mouse can only push if within boid detection range
+            if (mouse_dis < Settings::perception_radius && mouse_dis > 0)
+                mouse_sep = Vector2Normalize(mouse_sep) * (1.0f / (mouse_dis + 0.001f));
+            else
+                mouse_sep = {0, 0};
+            // --- ---
             float deltaTime = GetFrameTime();
             boids[i].vel += ali * Settings::ali_weight * deltaTime + coh * Settings::coh_weight * deltaTime +
-                            sep * Settings::sep_weight * deltaTime + mouse_sep * deltaTime * Settings::mouse_weight;
+                            sep * Settings::sep_weight * deltaTime +
+                            mouse_sep * deltaTime * Settings::mouse_weight * MOUSE_CONST;
 
             boids[i].vel = Vector2ClampValue(boids[i].vel, 0, Settings::max_speed);
             boids[i].pos = boids[i].pos + boids[i].vel;
@@ -153,7 +168,7 @@ int main(void)
             boids[i].UpdateTriangle();
             DrawTriangle(boids[i].vertices.v1, boids[i].vertices.v3, boids[i].vertices.v2, RAYWHITE);
         }
-        DrawRectangleLines(0, 0, Settings::WORLD_HEIGHT, Settings::WORLD_WIDTH, GREEN);
+        DrawRectangleLines(0, 0, WORLD_HEIGHT, WORLD_WIDTH, GREEN);
         EndMode2D();
         DrawConfig();
         DrawFPS(0, 0);
@@ -184,9 +199,10 @@ void DrawConfig()
         GuiSliderBar({startX, startY + 80, 120, 20}, "0", "500", &ali_weight, 0, 500);
         GuiLabel({startX, startY + 120, 120, 20}, "Cohesion");
         GuiSliderBar({startX, startY + 140, 120, 20}, "0", "500", &coh_weight, 0, 500);
-
-        GuiLabel({startX, startY + 180, 120, 10}, "Physics Settings");
-        GuiSliderBar({startX, startY + 200, 120, 20}, "Max Speed", nullptr, &max_speed, 0.5, 10);
+        GuiLabel({startX, startY + 160, 120, 20}, "Mouse fear");
+        GuiSliderBar({startX, startY + 180, 120, 20}, "0", "100", &mouse_weight, 0, 100);
+        GuiLabel({startX, startY + 220, 120, 20}, "Max Speed");
+        GuiSliderBar({startX, startY + 240, 120, 20}, "0.5", "10", &max_speed, 0.5, 10);
 
         // showDebug = GuiCheckBox({startX, startY + 180, 20, 20}, "Debug Mode", showDebug);
     }
