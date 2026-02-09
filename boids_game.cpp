@@ -1,32 +1,51 @@
+/* The gamified version of the boids simulation
+ * Each parameter will have a slider/button in the game screen
+ * So that one can manipulate it and watch emergent behaviour
+ * And can understand the true beauty of flocking simulation
+ */
 
 #include <math.h>
 #include <raylib.h>
 #include <raymath.h>
 #include <vector>
-using namespace std;
+#define RAYGUI_IMPLEMENTATION
+
+#include "lib/raygui.h"
+
 #define WIDTH 1000
 #define HEIGHT 700
-#define WORLD_WIDTH 2000
-#define WORLD_HEIGHT 2000
 #define BOID_COUNT 600
-
-#define PERCEPTION_RADIUS 50
-#define MAX_SPEED 2.5f
-
-#define SEP_W 100.0f    // seperation weight
-#define ALI_W 50.0f     // alignment weight
-#define COH_W 40.0f     // cohesion weight
-#define MOUSE_W 5000.0f // mouse weight
 
 #define TRI_DIM 5.0f // length from center to vertice
 
 #define CAMERA_SPEED 1000.0f;
 
+// namespace to hold all config information
+namespace Settings
+{
+// --- BOID CONTROL ---
+float perception_radius = 50.0f;
+float max_speed = 2.5f;
+float sep_weight = 100.0f;
+float ali_weight = 50.0f;
+float coh_weight = 40.0f;
+float mouse_weight = 5000.0f;
+uint WORLD_HEIGHT = 2000;
+uint WORLD_WIDTH = 2000;
+// --- ---
+// --- Settings window params ---
+bool menuActive = false;
+float menuWidth = 250.0f;
+float currentOffset = 0.0f;
+
+}; // namespace Settings
+
+// vertices in clock-wise order
 typedef struct triangle_vertices
 {
     Vector2 v1;
     Vector2 v2;
-    Vector2 v3; // clockwise order
+    Vector2 v3;
 } Triangle;
 
 class Boid
@@ -47,32 +66,26 @@ class Boid
     }
     void WrapAroundWorld()
     {
-        if (pos.x > WORLD_WIDTH)
-            pos.x -= WORLD_WIDTH;
-        if (pos.y > WORLD_HEIGHT)
-            pos.y -= WORLD_HEIGHT;
+        if (pos.x > Settings::WORLD_WIDTH)
+            pos.x -= Settings::WORLD_WIDTH;
+        if (pos.y > Settings::WORLD_HEIGHT)
+            pos.y -= Settings::WORLD_HEIGHT;
         if (pos.x < 0)
-            pos.x += WORLD_WIDTH;
+            pos.x += Settings::WORLD_WIDTH;
         if (pos.y < 0)
-            pos.y += WORLD_HEIGHT;
-    }
-    void VelocityLimit()
-    {
-        float m = Vector2Length(vel);
-        if (m > MAX_SPEED)
-        {
-            vel.x = (vel.x / m) * MAX_SPEED;
-            vel.y = (vel.y / m) * MAX_SPEED;
-        }
+            pos.y += Settings::WORLD_HEIGHT;
     }
 };
+
+// raygui helpers
+void DrawConfig();
 
 int main(void)
 {
     InitWindow(WIDTH, HEIGHT, "Boids");
     SetTargetFPS(60);
 
-    vector<Boid> boids(BOID_COUNT);
+    std::vector<Boid> boids(BOID_COUNT);
 
     for (int i = 0; i < BOID_COUNT; i++)
     {
@@ -112,7 +125,7 @@ int main(void)
                     continue;
 
                 float d = Vector2Distance(boids[i].pos, boids[j].pos);
-                if (d < PERCEPTION_RADIUS && d > 0)
+                if (d < Settings::perception_radius && d > 0)
                 {
                     Vector2 diff = boids[i].pos - boids[j].pos;
                     sep += (diff * (1.0f) / (d + 0.0001f));
@@ -131,21 +144,56 @@ int main(void)
             float mouse_dis = Vector2Length(mouse_sep);
             mouse_sep = Vector2Normalize(mouse_sep) * (1.0f / (mouse_dis + 0.001f));
             float deltaTime = GetFrameTime();
-            boids[i].vel += ali * ALI_W * deltaTime + coh * COH_W * deltaTime + sep * SEP_W * deltaTime +
-                            mouse_sep * deltaTime * MOUSE_W;
+            boids[i].vel += ali * Settings::ali_weight * deltaTime + coh * Settings::coh_weight * deltaTime +
+                            sep * Settings::sep_weight * deltaTime + mouse_sep * deltaTime * Settings::mouse_weight;
 
-            boids[i].VelocityLimit();
+            Vector2ClampValue(boids[i].vel, 0, Settings::max_speed);
             boids[i].pos = boids[i].pos + boids[i].vel;
             boids[i].WrapAroundWorld();
             boids[i].UpdateTriangle();
             DrawTriangle(boids[i].vertices.v1, boids[i].vertices.v3, boids[i].vertices.v2, RAYWHITE);
         }
-        DrawRectangleLines(0, 0, WORLD_HEIGHT, WORLD_WIDTH, GREEN);
+        DrawRectangleLines(0, 0, Settings::WORLD_HEIGHT, Settings::WORLD_WIDTH, GREEN);
         EndMode2D();
+        DrawConfig();
         DrawFPS(WIDTH - 80, 0);
         EndDrawing();
     }
 
     CloseWindow();
     return 0;
+}
+
+void DrawConfig()
+{
+    using namespace Settings;
+
+    float target = menuActive ? menuWidth : 0.0f;
+    currentOffset += (target - currentOffset) * 0.15f;
+
+    if (currentOffset > 1.0f)
+    {
+        Rectangle panelArea = {(float) GetScreenWidth() - currentOffset, 0, menuWidth, (float) GetScreenHeight()};
+
+        GuiPanel(panelArea, "BOID CONFIGURATOR");
+        float startX = panelArea.x + 60;
+        float startY = 50;
+        GuiLabel({startX, startY, 120, 20}, "Seperation");
+        sep_weight = GuiSliderBar({startX, startY + 20, 120, 20}, "0", "1000", &sep_weight, 0, 1000);
+        GuiLabel({startX, startY + 60, 120, 20}, "Alignment");
+        ali_weight = GuiSliderBar({startX, startY + 80, 120, 20}, "0", "500", &ali_weight, 0, 500);
+        GuiLabel({startX, startY + 120, 120, 20}, "Cohesion");
+        coh_weight = GuiSliderBar({startX, startY + 140, 120, 20}, "0", "500", &coh_weight, 0, 500);
+
+        GuiLabel({startX, startY + 180, 120, 20}, "Physics Settings");
+        max_speed = GuiSliderBar({startX, startY + 200, 120, 20}, "Max Speed", nullptr, &max_speed, 0.5, 10);
+
+        // showDebug = GuiCheckBox({startX, startY + 180, 20, 20}, "Debug Mode", showDebug);
+    }
+
+    float btnX = (float) GetScreenWidth() - currentOffset - 40;
+    if (GuiButton({btnX, 10, 30, 30}, menuActive ? ">" : "#141#"))
+    {
+        menuActive = !menuActive;
+    }
 }
