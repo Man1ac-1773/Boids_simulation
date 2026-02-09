@@ -22,13 +22,7 @@
 #define WALL_CONST 100  // a constant to scale wall_weight
 #define WALL_TOL 100.0f // distance at which wall starts exerting force
 #define TRI_DIM 5.0f    // length from center to vertice of boid triangle
-#define CAMERA_SPEED 1000.0f;
-
-std::ostream& operator<<(std::ostream& os, Vector2& vec)
-{
-    os << "{" << vec.x << ", " << vec.y << "}";
-    return os;
-}
+#define CAMERA_SPEED 1000.0f
 
 // namespace to hold all config information
 namespace Settings
@@ -111,7 +105,7 @@ int main(void)
     // spawn boids only within screen limit
     for (int i = 0; i < BOID_COUNT; i++)
     {
-        boids[i].pos = (Vector2) {(float) (rand() % WIDTH), (float) (rand() % HEIGHT)};
+        boids[i].pos = (Vector2) {(float) (rand() % WORLD_WIDTH), (float) (rand() % WORLD_HEIGHT)};
         boids[i].vel = (Vector2) {((rand() % 100) / 50.0f - 1), ((rand() % 100) / 50.0f - 1)};
     }
     Camera2D camera = {0};
